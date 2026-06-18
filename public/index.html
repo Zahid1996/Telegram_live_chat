@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Chat</title>
+<style>
+body{
+font-family:Arial,sans-serif;
+max-width:600px;
+margin:20px auto;
+padding:15px;
+}
+#chat{
+height:350px;
+border:1px solid #ccc;
+padding:10px;
+overflow-y:auto;
+margin-bottom:10px;
+}
+input,textarea{
+width:100%;
+padding:10px;
+margin:5px 0;
+box-sizing:border-box;
+}
+button{
+width:100%;
+padding:12px;
+cursor:pointer;
+}
+.visitor{
+color:blue;
+margin:5px 0;
+}
+.admin{
+color:green;
+margin:5px 0;
+}
+</style>
+</head>
+<body>
+
+<h2>Live Chat</h2>
+
+<div id="chat"></div>
+
+<input type="text" id="name" placeholder="Your Name">
+
+<textarea id="message" placeholder="Write message"></textarea>
+
+<button onclick="sendMessage()">Send</button>
+
+<script>
+let visitorId = localStorage.getItem("visitorId");
+
+if(!visitorId){
+visitorId = Math.random().toString(36).substring(2,12);
+localStorage.setItem("visitorId", visitorId);
+}
+
+async function sendMessage(){
+
+const name = document.getElementById("name").value;
+const message = document.getElementById("message").value;
+
+if(!message) return;
+
+await fetch("/api/send",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+visitorId,
+name,
+message
+})
+});
+
+document.getElementById("message").value="";
+loadMessages();
+}
+
+async function loadMessages(){
+
+const res = await fetch(`/api/messages/${visitorId}`);
+const data = await res.json();
+
+const chat = document.getElementById("chat");
+
+chat.innerHTML = data.map(msg => `
+<div class="${msg.from}">
+<b>${msg.from === "admin" ? "Support" : "You"}:</b>
+${msg.text}
+</div>
+`).join("");
+
+chat.scrollTop = chat.scrollHeight;
+}
+
+setInterval(loadMessages,3000);
+loadMessages();
+</script>
+
+</body>
+</html>
